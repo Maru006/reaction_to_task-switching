@@ -79,7 +79,7 @@ def main():
     #     data = manipulate('C:\\Users\\Maru\\PycharmProjects\\Dissertation\\RawData.xlsx', i)
 
     data = manipulate('C:\\Users\\Maru\\PycharmProjects\\Dissertation\\RawData.xlsx', ID[1])
-    print(data.process_variables('notdict'))
+    print(data.process_variables('notdict' # add your switch-case statements)) 
 
 
 if __name__ == '__main__':
