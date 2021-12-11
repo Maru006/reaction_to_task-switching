@@ -112,7 +112,7 @@ class manipulate:
 
 
 def main():
-    url = 'C:\\Users\\Maru\\PycharmProjects\\Dissertation\\RawData.xlsx'
+    url = '***URL***'
     sheet = sheets(url, regex=r'[fF][pP]\d+_[vV]isit_\d')
     
     #for i in sheet:
