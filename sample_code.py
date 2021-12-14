@@ -23,6 +23,35 @@ class manipulate:
         self.grpType = []  # process_type, volume parameter
         self.grpData = []  # process_variables, volume parameter
 
+    def Type(self, info_mode=False):
+        if not info_mode:
+            if self.setVolume:
+                types = self.grpType
+                if self.setVolume:
+                    return types
+                if self.setVolume:
+                    logging.warning(f'You have set self.setVolume (or by default) at {self.setVolume}. This function is only useful for checking memory when'
+                                    f' setVolume (default=False) parameter for Class:manipulate is set to True to store data. \n Instead, print '
+                                    f' either process functions instead.')
+        if info_mode:
+            logging.info(f' There are {len(self.grpType) + 1} Labels currently sitting in your memory. \n'
+                         f' The last label is: ')
+            return self.grpType[len(self.grpType) - 1]
+
+    def Data(self, info_mode=False):
+        if not info_mode:
+            if self.setVolume:
+                grpData = self.grpData
+                return grpData
+            if not self.setVolume:
+                logging.warning(f'You have set self.setVolume (or by default) at {self.setVolume}. This function is only useful for checking memory when'
+                                f' setVolume (default=False) parameter for Class:manipulate is set to True to store data. \n Instead, print '
+                                f' either process functions instead.')
+        if info_mode:
+            logging.info(f' There are {len(self.grpData) + 1} Dataframes currently sitting in your memory \n'
+                         f'The last dataframe consists of: ')
+            return self.grpData[len(self.grpData) - 1]
+          
     def process_sheets(self, regex):
         # takes out sheet names specified by a regex function specifying the sheets
         _sheet_lst = pd.read_excel(self.url, None)
