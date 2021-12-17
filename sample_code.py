@@ -2,6 +2,7 @@ import pandas as pd
 import logging
 import re
 import numpy as np
+import scipy.stats.mstats as sp # for now
 import itertools
 from matplotlib import pyplot as plt
 import seaborn as sns
@@ -123,9 +124,106 @@ class manipulate:
                 logging.info(f'{argVar} variable included')
                 self.grpData.append({sheet: variables[argVar]})
             else:
-                logging.warning(f'{argVar} not in specified variables')
+                logging.warning(f'{argVar} not in specified variables for {sheet}')
 
 
+class framework:
+
+    def __init__(self, types, argstypes, data, argsdata):
+        self.types = types
+        self.argstypes = argstypes
+        self.data = data
+        self.argsdata = argsdata
+
+        self.included = []
+        self.excluded = []
+
+    def frame(self, axis, inclusive=True):  # I believe this method can't ask for forgiveness as it heavily relies on accuracy, thus permissions.
+        if isinstance(self.types, list) and isinstance(self.data, list):
+            for types, datas in zip(self.types, self.data):
+                for type_keys, type_values in zip(types.keys(), types.values()):
+                    if type_values == self.argstypes:
+                        for dataframe in datas.values():
+                            self.included.append(dataframe['Unnamed: 10'])
+                    elif type_values != self.argstypes:
+                        for dataframe in datas.values():
+                            self.excluded.append(dataframe['Unnamed: 10'])
+                            logging.info(f'{type_keys} was not included in this analysis')
+                        continue
+            # logging.info(f' You have excluded {len(self.excluded)} from your analysis != {self.argstypes}')
+            if inclusive:
+                self.included = pd.concat(self.included, axis=axis)
+                return self.included
+            if not inclusive:
+                self.excluded = pd.concat(self.excluded, axis=axis)
+                return self.excluded
+        else:
+            logging.warning(f'Type parameter must be in dictionary form. You have given a {type(self.types)}')
+            logging.warning(f'Data parameter must be in dictionary form. You have given a {type(self.data)}')
+
+    @staticmethod
+    def analytics(argStat, argStats, shape=True):
+        if shape: # switch case statements to be implemented as I test my statistics for this particular dataset
+            Bayesian_statistics = {
+                'One Sample Normal': '',
+                'One Sample Binomial': '',
+                'One Sample Poisson': '',
+                'Related Samples Normal': '',
+                'Independent Samples Normal': '',
+                'Pearson Correlation': '',
+                'Linear Regression': '',
+                'One-way ANOVA': '',
+                'Loglinear Models': '',
+                'One-way Repeated Measures': ''
+            }
+            Compare_means = {
+                'Means': '',
+                'One-Sample T Test': '',
+                'Independent-Samples T Test': '',
+                'Summary Independent-Samples T Test': '',
+                'Paired-Samples T Test': '',
+                'One-Way ANOVA': ''
+            }
+            General_linear_model = {
+                'Uni-variate': '',
+                'Multi-variate': '',
+                'Repeated Measures': ''
+            }
+            Correlate = {
+                'Bivariate': '',
+                'Partial': '',
+                'Distances': '',
+                'Canonical': ''
+            }
+            Regression = {
+                'Automatic Linear Modelling': '',
+                'Linear': '',
+                'Curve Estimation': '',
+                'Partial Least Squares': '',
+                'Binary Logistics': '',
+                'Multinomial Logistics': '',
+                'Ordinal': '',
+                'Probit': '',
+                'Nonlinear': '',
+                'Weight Estimation': '',
+                '2-Stage Least Squares': '',
+                'Quantile': ''
+            }
+            Log_linear = {
+                'General': '',
+                'Logit': '',
+                'Model Selection': '',
+            }
+            Dimension_reduction = {
+                'Factor': '',
+                'Correspondence Analysis': '',
+                'Optimal Scaling': ''
+            }
+        if not shape:
+            pass                
+                
+                
+                
 def main():
     url = '***URL***'
     regex=r'[fF][pP]\d+_[vV]isit_\d'
@@ -134,9 +232,13 @@ def main():
     process.process_sheets(regex)
     process.process_type()
     process.process_variables('bi')
+    types = process.Type(info_mode=False)
+    data = process.Data(info_mode=False)
+    
+    analysis = framework(types=types, argstypes='personal', data=data, argsdata='Unnamed: 10')
+    personal = analysis.frame(axis=0)
+    process = analysis.frame(axis=0, inclusive=False)
 
-    print(process.grpType)
-    print(process.grpData)
 
 
 
