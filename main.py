@@ -14,7 +14,7 @@ logging.basicConfig(level=logging.DEBUG,
                     format='%(funcName)s :: %(message)s')
 
 
-class manipulate:
+class preprocessing:
 
     def __init__(self, url, setVolume=False):
         self.url = url
@@ -107,14 +107,14 @@ class manipulate:
                 'fb': data.loc[0:99, :].reset_index(),
                 'nfb': data.loc[100:155, :].reset_index(),
 
-                'bi': data.loc[np.where(data['Unnamed: 24'] != ' ')],
-                'uni': data.loc[np.where(data['Unnamed: 25'] != ' ')],
+                'bi': data.loc[np.where(data['Unnamed: 24'] == ' ')],
+                'uni': data.loc[np.where(data['Unnamed: 25'] == ' ')],
 
-                'fb_bi': fb.loc[np.where(fb['Unnamed: 24'] != ' ')],
-                'fb_uni': fb.loc[np.where(fb['Unnamed: 25'] != ' ')],
+                'fb_bi': fb.loc[np.where(fb['Unnamed: 24'] == ' ')],
+                'fb_uni': fb.loc[np.where(fb['Unnamed: 25'] == ' ')],
 
-                'nfb_bi': nfb.loc[np.where(nfb['Unnamed: 24'] != ' ')],
-                'nfb_uni': nfb.loc[np.where(nfb['Unnamed: 25'] != ' ')],
+                'nfb_bi': nfb.loc[np.where(nfb['Unnamed: 24'] == ' ')],
+                'nfb_uni': nfb.loc[np.where(nfb['Unnamed: 25'] == ' ')],
             }
             if not self.setVolume:
                 if argVar in variables:
@@ -137,17 +137,23 @@ class framework:
 
         self.included = []
         self.excluded = []
-
+        
+        self.included_indexes = []
+        self.excluded_indexes = []
+        
+        
     def frame(self, axis, inclusive=True):  # I believe this method can't ask for forgiveness as it heavily relies on accuracy, thus permissions.
         if isinstance(self.types, list) and isinstance(self.data, list):
             for types, datas in zip(self.types, self.data):
                 for type_keys, type_values in zip(types.keys(), types.values()):
                     if type_values == self.argstypes:
                         for dataframe in datas.values():
-                            self.included.append(dataframe['Unnamed: 10'])
+                            self.included.append(dataframe['Unnamed: 10'].astype(float))
+                            self.included_indexes.append(dataframe['Unnamed: 1'])
                     elif type_values != self.argstypes:
                         for dataframe in datas.values():
-                            self.excluded.append(dataframe['Unnamed: 10'])
+                            self.excluded.append(dataframe['Unnamed: 10'].astype(float))
+                            self.excluded_indexes.append(dataframe['Unnamed: 1'])
                             logging.info(f'{type_keys} was not included in this analysis')
                         continue
             # logging.info(f' You have excluded {len(self.excluded)} from your analysis != {self.argstypes}')
@@ -161,6 +167,12 @@ class framework:
             logging.warning(f'Type parameter must be in dictionary form. You have given a {type(self.types)}')
             logging.warning(f'Data parameter must be in dictionary form. You have given a {type(self.data)}')
 
+    @property
+    def indexes(self):
+        logging.info('included')
+        self.included_indexes = pd.concat(self.included_indexes, axis=1)
+        return self.included_indexes
+        
     @staticmethod
     def analytics(argStat, argStats, shape=True):
         if shape: # switch case statements to be implemented as I test my statistics for this particular dataset
@@ -222,25 +234,103 @@ class framework:
         if not shape:
             pass                
                 
-                
-                
+class group:
+  
+      
+    def __init__(self, data, url, regressor: str):
+        self.data = data
+        self.url = url
+        self.regressor = regressor
+
+    def regress(self, sample_sheet=7):
+        sample_data = (pd.read_excel(io=self.url, sheet_name=sample_sheet))
+        sample_data = pd.concat([sample_data.iloc[2:102], sample_data.iloc[107:157]]).reset_index()
+        full = sample_data['Unnamed: 1']
+        fb_timeRegressor = sample_data.loc[0:99, :]['Unnamed: 1']
+        nfb_timeRegressor = sample_data.loc[100:155, :]['Unnamed: 1']
+
+        if self.regressor == 'fb':
+            try:
+                dataframe = pd.concat([self.data.reset_index(), fb_timeRegressor.loc[self.data.index].reset_index()], axis=1, ignore_index=True)
+                return dataframe
+            except KeyError as error:
+                logging.warning(f'Index mismatch. Check whether preprocessed variables are within the parameters set in arguments: process_variables(argVar:str)')
+                print(error)
+        if self.regressor == 'nfb':
+            try:
+                dataframe = pd.concat([self.data.reset_index(), nfb_timeRegressor.loc[self.data.index].reset_index()], axis=1, ignore_index=True)
+                return dataframe
+            except KeyError as error:
+                logging.warning(f'Index mismatch. Check whether preprocessed variables are within the parameters set in arguments: process_variables(argVar:str)')
+                print(error)
+
+        if self.regressor == 'full':
+            try:
+                dataframe = pd.concat([self.data.reset_index(), full.loc[self.data.index].reset_index()], axis=1, ignore_index=True)
+                return dataframe
+            except KeyError as error:
+                logging.warning(f'Index mismatch. Check whether preprocessed variables are within the parameters set in arguments: process_variables(argVar:str)')
+                print(error)
+
+        else:
+            logging.info(f"Select between, 'fb', 'nfb' or 'full' instead of {self.regressor}")                
+
+
+def automate(argVar: str, regressor: str, argstypes='process'):
+    url = '**Directory**'
+    regex = r'[fF][pP]\d+_[vV]isit_\d'
+
+    create = preprocessing(url, setVolume=True)
+    create.process_sheets(regex=regex)
+    create.process_type()
+    create.process_variables(argVar=argVar.lower())  # variables of interest
+
+    types = create.Type(info_mode=False)
+    data = create.Data(info_mode=False)
+    data = framework(types=types, argstypes=argstypes.lower(), data=data, argsdata='Unnamed: 10').frame(axis=1)  # type process or personal
+    data = data.assign(Mean=data.mean(axis=1))
+    dataframe = group(data=data, url=url, regressor=regressor.lower()).regress()  # time regressor 'fb' or 'nfb'
+
+    if argstypes == 'personal':
+        return dataframe.drop([0, 24])
+    if argstypes == 'process':
+        return dataframe.drop([0, 23])                
+
+      
 def main():
-    url = '***URL***'
-    regex=r'[fF][pP]\d+_[vV]isit_\d'
+  
+    pro_fb_uni = automate(argVar='fb_uni', argstypes='process', regressor='fb')
+    pro_fb_bi = automate(argVar='fb_bi', argstypes='process', regressor='fb')
+    per_fb_bi = automate(argVar='fb_bi', argstypes='personal', regressor='fb')
+    per_fb_uni = automate(argVar='fb_uni', argstypes='personal', regressor='fb')
     
-    process = manipulate(url, setVolume=True)
-    process.process_sheets(regex)
-    process.process_type()
-    process.process_variables('bi')
-    types = process.Type(info_mode=False)
-    data = process.Data(info_mode=False)
+    # sample visualization
+    # conditions: fb, nfb, bi, uni, fb_bi, fb_uni, nfb_bi, nfb_uni
+    # per_bi = automate(argVar='bi', argstypes='personal', regressor='full')
+    # pro_bi = automate(argVar='bi', argstypes='process', regressor='full')
+
+    sns.lineplot(x=per_fb_bi[25],
+                 y=per_fb_bi[23],
+                 marker='o',
+                 label='Per_Fb_Bi')
+    sns.lineplot(x=per_fb_uni[25],
+                 y=per_fb_uni[23],
+                 marker='o',
+                 label='Per_Fb_Uni')
+
+    sns.lineplot(x=pro_fb_bi[24],
+                 y=pro_fb_bi[22],
+                 marker='o',
+                 label='Pro_Fb_Bi')
+    sns.lineplot(x=pro_fb_uni[24],
+                 y=pro_fb_uni[22],
+                 marker='o',
+                 label='Pro_Fb_Uni')
+    plt.title('Reaction Times for each conditions')
+    plt.xlabel('Time')
+    plt.ylabel('Reaction Time')
     
-    analysis = framework(types=types, argstypes='personal', data=data, argsdata='Unnamed: 10')
-    personal = analysis.frame(axis=0)
-    process = analysis.frame(axis=0, inclusive=False)
-
-
-
-
+    plt.show()
+    
 if __name__ == '__main__':
     main()
