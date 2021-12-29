@@ -253,11 +253,6 @@ def main():
     nfb_per_bi = automate(argVar='nfb_bi', argtypes='personal', regressor='nfb')  # 22
     nfb_pro_bi = automate(argVar='nfb_bi', argtypes='process', regressor='nfb')  # 21
 
-    per_fb_uni = automate(argVar='fb_uni', argtypes='personal', regressor='fb')  # 22
-    pro_fb_uni = automate(argVar='fb_uni', argtypes='process', regressor='fb')  # 21
-    pro_fb_bi = automate(argVar='fb_bi', argtypes='process', regressor='fb')  # 21
-    per_fb_bi = automate(argVar='fb_bi', argtypes='personal', regressor='fb')  # 22
-
     per_pivot_table = pd.concat([fb_per_uni,
                                  nfb_per_uni,
                                  fb_per_bi,
